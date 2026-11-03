@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Retention Lens: bank customer churn analysis</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <a class="brand" href="#overview">Retention Lens</a>
+  <nav aria-label="Sections">
+    <a href="#drivers">Where churn concentrates</a>
+    <a href="#profile">Leavers vs stayers</a>
+    <a href="#relationships">Relationships</a>
+    <a href="#explorer">Segment explorer</a>
+    <a href="#customers">Customer list</a>
+  </nav>
+</header>
+
+<main>
+
+  <!-- Overview -->
+  <section id="overview" class="hero">
+    <div class="hero-text">
+      <h1 id="headline">Loading the data…</h1>
+      <p class="lede" id="lede"></p>
+      <dl class="stats" id="stats"></dl>
+    </div>
+    <figure class="hero-dots">
+      <div id="dots" class="dots" role="img" aria-label="Churn shown as 100 dots"></div>
+      <figcaption>
+        <span class="swatch stay"></span>Stayed
+        <span class="swatch leave"></span>Left
+        <span class="note">Each dot is 1% of customers.</span>
+      </figcaption>
+    </figure>
+  </section>
+
+  <!-- Drivers -->
+  <section id="drivers" class="block">
+    <div class="block-head">
+      <h2>Where churn concentrates</h2>
+      <p>Choose a way to split the customers. Coral bars are groups that leave more often than the bank average, shown by the dashed line.</p>
+    </div>
+    <div class="split">
+      <div class="panel">
+        <div class="chips" id="dimChips" role="group" aria-label="Split customers by"></div>
+        <div class="chart-wrap"><canvas id="dimChart" aria-label="Churn rate by group"></canvas></div>
+      </div>
+      <aside class="hotspots">
+        <h3>Highest-risk groups</h3>
+        <p class="small">The worst group in each split, ranked by churn rate.</p>
+        <ol id="hotspots"></ol>
+      </aside>
+    </div>
+  </section>
+
+  <!-- Profile -->
+  <section id="profile" class="block">
+    <div class="block-head">
+      <h2>Leavers vs stayers</h2>
+      <p>How the two groups differ on average, and how each trait is spread across customers.</p>
+    </div>
+    <div class="split split-even">
+      <div class="panel">
+        <div class="chips" id="distChips" role="group" aria-label="Show distribution of"></div>
+        <div class="chart-wrap"><canvas id="distChart" aria-label="Customers by value, stayed and left"></canvas></div>
+      </div>
+      <div class="panel table-panel">
+        <table class="compare">
+          <thead><tr><th scope="col">Average</th><th scope="col">Stayed</th><th scope="col">Left</th></tr></thead>
+          <tbody id="compareBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Relationships -->
+  <section id="relationships" class="block">
+    <div class="block-head">
+      <h2>How the numbers move together</h2>
+      <p id="corrNote">Correlation between every pair of numeric columns. Coral means they rise together, aqua means one rises as the other falls.</p>
+    </div>
+    <div class="heat-scroll"><div id="heatmap" class="heatmap" role="table" aria-label="Correlation matrix"></div></div>
+  </section>
+
+  <!-- Explorer -->
+  <section id="explorer" class="block">
+    <div class="block-head">
+      <h2>Segment explorer</h2>
+      <p>Pick any mix of filters and see how many customers match and how many of them left.</p>
+    </div>
+    <div class="explorer">
+      <div class="filters">
+        <div class="presets">
+          <button type="button" class="chip" data-preset="germany-inactive">Inactive customers in Germany</button>
+          <button type="button" class="chip" data-preset="midlife">Customers aged 45 to 60</button>
+          <button type="button" class="chip" data-preset="three-products">Customers with 3 products</button>
+        </div>
+        <div class="field-grid">
+          <label>Country
+            <select id="fGeo"><option value="">Any</option><option>France</option><option>Germany</option><option>Spain</option></select>
+          </label>
+          <label>Gender
+            <select id="fGender"><option value="">Any</option><option>Female</option><option>Male</option></select>
+          </label>
+          <label>Products held
+            <select id="fProducts"><option value="">Any</option><option>1</option><option>2</option><option>3</option><option>4</option></select>
+          </label>
+          <label>Membership
+            <select id="fActive"><option value="">Any</option><option value="1">Active</option><option value="0">Inactive</option></select>
+          </label>
+          <label>Credit card
+            <select id="fCard"><option value="">Any</option><option value="1">Has card</option><option value="0">No card</option></select>
+          </label>
+          <label>Age from
+            <input id="fAgeMin" type="number" min="18" max="92" value="18">
+          </label>
+          <label>Age to
+            <input id="fAgeMax" type="number" min="18" max="92" value="92">
+          </label>
+        </div>
+        <button type="button" class="reset" id="resetFilters">Reset filters</button>
+      </div>
+
+      <div class="result" aria-live="polite">
+        <p class="result-rate" id="segRate">–</p>
+        <p class="result-sub" id="segSub"></p>
+        <div id="segDots" class="dots small" role="img" aria-label="Share of matching customers who left"></div>
+        <dl class="result-facts">
+          <div><dt>Customers matched</dt><dd id="segCount">–</dd></div>
+          <div><dt>Of them, left</dt><dd id="segChurned">–</dd></div>
+          <div><dt>Average balance</dt><dd id="segBalance">–</dd></div>
+          <div><dt>Average credit score</dt><dd id="segCredit">–</dd></div>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <!-- Customers -->
+  <section id="customers" class="block">
+    <div class="block-head">
+      <h2>Customer list</h2>
+      <p>Search by surname, filter by outcome, and click a column heading to sort.</p>
+    </div>
+    <div class="table-tools">
+      <label>Surname
+        <input id="tSearch" type="search" placeholder="Type to search">
+      </label>
+      <label>Outcome
+        <select id="tStatus"><option value="">All customers</option><option value="left">Left</option><option value="stayed">Stayed</option></select>
+      </label>
+    </div>
+    <div class="table-scroll">
+      <table class="customers">
+        <thead id="custHead"></thead>
+        <tbody id="custBody"></tbody>
+      </table>
+    </div>
+    <div class="pager">
+      <p id="pagerInfo" class="small"></p>
+      <div>
+        <button type="button" id="prevPage">Previous</button>
+        <button type="button" id="nextPage">Next</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <p>Built from Churn_Modelling.csv, which holds 10,000 bank customers. Backend: Python, Flask and pandas. Front end: HTML, CSS, JavaScript and Chart.js.</p>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>
